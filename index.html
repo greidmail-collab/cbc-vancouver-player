@@ -142,6 +142,20 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
     const streamUrl = "PASTE_YOUR_M3U8_STREAM_ADDRESS_HERE";
 
     const radio = document.getElementById("radio");
+    const streamUrl = "YOUR_M3U8_STREAM_URL_HERE";
+let hls = null;
+
+if (radio.canPlayType("application/vnd.apple.mpegurl")) {
+    radio.src = streamUrl;
+}
+else if (Hls.isSupported()) {
+    hls = new Hls();
+    hls.loadSource(streamUrl);
+    hls.attachMedia(radio);
+}
+else {
+    alert("This browser doesn't support HLS streaming.");
+}
     const playButton = document.getElementById("playButton");
     const statusText = document.getElementById("status");
 

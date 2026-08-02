@@ -78,6 +78,315 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       font-size: 16px;
     }
 
+    .play-button {
+      width: 160px;
+      height: 160px;
+      border: none;
+      border-radius: 50%;
+
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+
+      background: #c90016;
+      color: white;
+
+      font-size: 60px;
+      line-height: 1;
+      cursor: pointer;
+
+      box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.45),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .play-button:active {
+      transform: scale(0.97);
+    }
+
+    .play-button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    audio {
+      display: none;
+    }
+  </style></head><body>
+  <main class="player">
+    <div class="logo">CBC</div><h1>CBC Radio One</h1>
+<div class="station">Vancouver · 690 AM / 88.1 FM</div>
+
+<div id="status" class="status">Tap Play to listen</div>
+
+<button
+  id="playButton"
+  class="play-button"
+  type="button"
+  aria-label="Play CBC Radio One Vancouver"
+>
+  ▶
+</button>
+
+<audio id="radio" preload="none"></audio>
+
+  </main>  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>  <script>
+    "use strict";
+
+    /*
+      Replace the address below with the complete CBC .m3u8 stream address.
+      Keep the quotation marks.
+    */
+    const streamUrl = "PASTE_YOUR_M3U8_STREAM_ADDRESS_HERE";
+
+    const radio = document.getElementById("radio");
+    const streamUrl = "YOUR_M3U8_STREAM_URL_HERE";
+let hls = null;
+
+if (radio.canPlayType("application/vnd.apple.mpegurl")) {
+    radio.src = streamUrl;
+}
+else if (Hls.isSupported()) {
+    hls = new Hls();
+    hls.loadSource(streamUrl);
+    hls.attachMedia(radio);
+}
+else {
+    alert("This browser doesn't support HLS streaming.");
+}
+    const playButton = document.getElementById("playButton");
+
+playButton.addEventListener("click", async () => {
+
+    if (radio.paused) {
+
+        try {
+            await radio.play();
+            playButton.textContent = "❚❚";
+        }
+        catch (err) {
+            console.log(err);
+        }
+
+    } else {
+
+        radio.pause();
+        playButton.textContent = "▶";
+
+    }
+
+});
+
+radio.addEventListener("pause", () => {
+    playButton.textContent = "▶";
+});
+
+radio.addEventListener("playing", () => {
+    playButton.textContent = "❚❚";
+});
+    const statusText = document.getElementById("status");
+
+    let hls = null;
+    let streamLoaded = false;
+
+    function showPlaying() {
+      playButton.textContent = "❚❚";
+      playButton.setAttribute(
+        "aria-label",
+        "Pause CBC Radio One Vancouver"
+      );
+
+      statusText.textContent = "Playing live";
+    }
+
+    function showPaused(message = "Tap Play to listen") {
+      playButton.textContent = "▶";
+      playButton.setAttribute(
+        "aria-label",
+        "Play CBC Radio One Vancouver"
+      );
+
+      statusText.textContent = message;
+    }
+
+    function disablePlayer(message) {
+      radio.pause();
+      playButton.disabled = true;
+      showPaused(message);
+    }
+
+    function loadStream() {
+      /*
+        iPhone, iPad and Safari have built-in HLS support.
+      */
+      if (radio.canPlayType("application/vnd.apple.mpegurl")) {
+        radio.src = streamUrl;
+        streamLoaded = true;
+        return;
+      }
+
+      /*
+        Android Chrome and other compatible browsers use hls.js.
+      */
+      if (window.Hls && Hls.isSupported()) {
+        hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: false
+        });
+
+        hls.loadSource(streamUrl);
+        hls.attachMedia(radio);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          streamLoaded = true;
+        });
+
+        hls.on(Hls.Events.ERROR, function (event, data) {
+          console.error("HLS playback error:", data);
+
+          if (!data.fatal) {
+            return;
+          }
+
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              statusText.textContent = "Reconnecting…";
+              hls.startLoad();
+              break;
+
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              statusText.textContent = "Recovering stream…";
+              hls.recoverMediaError();
+              break;
+
+            default:
+              disablePlayer("Stream unavailable");
+              hls.destroy();
+              break;
+          }
+        });
+
+        return;
+      }
+
+      disablePlayer("This browser cannot play the stream");
+    }
+
+    async function playRadio() {
+      statusText.textContent = "Connecting…";
+
+      try {
+        /*
+          On some devices, loading begins only after the user taps Play.
+        */
+        if (!streamLoaded && hls) {
+          hls.startLoad();
+        }
+
+        await radio.play();
+        showPlaying();
+      } catch (error) {
+        console.error("Unable to begin playback:", error);
+        showPaused("Unable to start the stream");
+      }
+    }
+
+    function pauseRadio() {
+      radio.pause();
+      showPaused();
+    }
+
+    playButton.addEventListener("click", function () {
+      if (radio.paused) {
+        playRadio();
+      } else {
+        pauseRadio();
+      }
+    });
+
+    radio.addEventListener("playing", showPlaying);
+
+    radio.addEventListener("waiting", function () {
+      statusText.textContent = "Buffering…";
+    });
+
+    radio.addEventListener("stalled", function () {
+      statusText.textContent = "Reconnecting…";
+    });
+
+    radio.addEventListener("pause", function () {
+      if (!radio.ended) {
+        showPaused();
+      }
+    });
+
+    radio.addEventListener("error", function () {
+      if (!hls) {
+        showPaused("Stream unavailable");
+      }
+    });
+
+    loadStream();
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker
+          .register("service-worker.js")
+          .catch(function (error) {
+            console.error(
+              "Service worker registration failed:",
+              error
+            );
+          });
+      });
+    }
+  </script></body>
+</html>    }
+
+    .player {
+      width: 100%;
+      max-width: 430px;
+      padding: 32px 24px;
+    }
+
+    .logo {
+      width: 125px;
+      height: 125px;
+      margin: 0 auto 22px;
+      border-radius: 50%;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      background: #c90016;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+
+      font-size: 34px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .station {
+      margin-top: 8px;
+      color: #d0d0d0;
+      font-size: 17px;
+    }
+
+    .status {
+      min-height: 25px;
+      margin: 28px 0 20px;
+      color: #efefef;
+      font-size: 16px;
+    }
+
     .play-button:active {
       transform: scale(0.97);
     }

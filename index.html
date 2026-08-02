@@ -78,44 +78,11 @@ content="width=device-width, initial-scale=1, viewport-fit=cover"
       font-size: 16px;
     }
 
-    .play-button {
-    width: 260px;
-    height: 260px;
-    border: none;
-    border-radius: 50%;
+    .play-button:active {
+      transform: scale(0.97);
+    }
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    background: #c90016;
-    color: white;
-
-    font-size: 110px;
-    font-weight: bold;
-    line-height: 1;
-
-    cursor: pointer;
-
-    box-shadow:
-        0 10px 35px rgba(0,0,0,.45),
-        inset 0 2px 3px rgba(255,255,255,.25);
-
-    transition: transform .15s ease,
-                box-shadow .15s ease;
-}
-
-.play-button:hover {
-    transform: scale(1.03);
-}
-
-.play-button:active {
-    transform: scale(.96);
-    box-shadow:
-        0 5px 15px rgba(0,0,0,.5);
-}
-
-.play-button:disabled {
+    .play-button:disabled {
       opacity: 0.45;
       cursor: not-allowed;
     }

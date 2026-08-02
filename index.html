@@ -157,6 +157,35 @@ else {
     alert("This browser doesn't support HLS streaming.");
 }
     const playButton = document.getElementById("playButton");
+
+playButton.addEventListener("click", async () => {
+
+    if (radio.paused) {
+
+        try {
+            await radio.play();
+            playButton.textContent = "❚❚";
+        }
+        catch (err) {
+            console.log(err);
+        }
+
+    } else {
+
+        radio.pause();
+        playButton.textContent = "▶";
+
+    }
+
+});
+
+radio.addEventListener("pause", () => {
+    playButton.textContent = "▶";
+});
+
+radio.addEventListener("playing", () => {
+    playButton.textContent = "❚❚";
+});
     const statusText = document.getElementById("status");
 
     let hls = null;
